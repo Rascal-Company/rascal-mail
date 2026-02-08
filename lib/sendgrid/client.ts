@@ -1,6 +1,13 @@
 import sgMail from '@sendgrid/mail';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+function getMailClient() {
+  const apiKey = process.env.SENDGRID_API_KEY;
+  if (!apiKey) {
+    throw new Error('Missing SENDGRID_API_KEY environment variable');
+  }
+  sgMail.setApiKey(apiKey);
+  return sgMail;
+}
 
 interface SendEmailParams {
   to: string;
@@ -12,6 +19,7 @@ interface SendEmailParams {
 }
 
 export async function sendEmail(params: SendEmailParams) {
+  const client = getMailClient();
   const msg = {
     to: params.to,
     from: params.from,
@@ -26,7 +34,7 @@ export async function sendEmail(params: SendEmailParams) {
     },
   };
 
-  const response = await sgMail.send(msg);
+  const response = await client.send(msg);
   return response[0].headers['x-message-id'];
 }
 
@@ -43,6 +51,7 @@ export async function sendBulkEmails(
   },
   campaignId: string
 ) {
+  const client = getMailClient();
   const messages = recipients.map((recipient) => {
     let html = template.html;
     let subject = template.subject;
@@ -77,7 +86,7 @@ export async function sendBulkEmails(
   const results = [];
 
   for (const batch of batches) {
-    const response = await sgMail.send(batch);
+    const response = await client.send(batch);
     results.push(response);
   }
 
