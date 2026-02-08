@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/client';
+import { createAuthClient, createDataClient } from '@/lib/supabase/client';
 import { toast } from '@/hooks/useToast';
 
 export default function SignupPage() {
@@ -17,30 +17,32 @@ export default function SignupPage() {
   const [orgName, setOrgName] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const authClient = createAuthClient();
+  const dataClient = createDataClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Sign up via Rascal AI auth
+      const { data, error } = await authClient.auth.signUp({ email, password });
       if (error) {
         toast({ title: 'Rekisteröinti epäonnistui', description: error.message, variant: 'destructive' });
         return;
       }
 
       if (data.user) {
-        // Create organization
+        // Create organization in Rascal Mail database
         const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-        const { data: org, error: orgError } = await supabase
+        const { data: org, error: orgError } = await dataClient
           .from('organizations')
           .insert({ name: orgName, slug })
           .select()
           .single();
 
         if (org && !orgError) {
-          await supabase.from('org_members').insert({
+          await dataClient.from('org_members').insert({
             user_id: data.user.id,
             email: email,
             organization_id: org.id,

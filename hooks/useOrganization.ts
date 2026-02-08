@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createAuthClient, createDataClient } from '@/lib/supabase/client';
 import { Organization } from '@/types';
 import React from 'react';
 
@@ -23,25 +23,26 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const authClient = createAuthClient();
+  const dataClient = createDataClient();
 
   useEffect(() => {
     async function fetchOrgs() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await authClient.auth.getUser();
         if (!user) {
           setLoading(false);
           return;
         }
 
-        const { data: members } = await supabase
+        const { data: members } = await dataClient
           .from('org_members')
           .select('organization_id')
           .eq('user_id', user.id);
 
         if (members && members.length > 0) {
           const orgIds = members.map((m) => m.organization_id);
-          const { data: orgs } = await supabase
+          const { data: orgs } = await dataClient
             .from('organizations')
             .select('*')
             .in('id', orgIds);
@@ -61,7 +62,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
 
     fetchOrgs();
-  }, [supabase]);
+  }, [authClient, dataClient]);
 
   const switchOrg = useCallback((orgId: string) => {
     const org = organizations.find((o) => o.id === orgId);

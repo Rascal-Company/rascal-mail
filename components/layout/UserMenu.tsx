@@ -11,14 +11,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createAuthClient } from '@/lib/supabase/client';
 
 export function UserMenu() {
   const router = useRouter();
-  const supabase = createClient();
+  const authClient = createAuthClient();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authClient.auth.signOut();
     router.push('/login');
   };
 
