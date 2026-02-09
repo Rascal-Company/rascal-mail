@@ -41,9 +41,9 @@ export interface DashboardStats {
   clickRate: number;
 }
 
-export interface CampaignAnalytics {
+export type CampaignAnalytics = {
   sends: EmailSend[];
-}
+};
 
 export interface PaginationParams {
   page: number;

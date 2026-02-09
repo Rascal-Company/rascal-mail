@@ -30,7 +30,6 @@ const roleIcons: Record<string, typeof Crown> = {
 
 export default function TeamPage() {
   const { currentOrg } = useOrganization();
-  const supabase = createClient();
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -45,6 +44,7 @@ export default function TeamPage() {
 
   const fetchMembers = async () => {
     if (!currentOrg) return;
+    const supabase = createClient();
     const { data } = await supabase
       .from('org_members')
       .select('*')
