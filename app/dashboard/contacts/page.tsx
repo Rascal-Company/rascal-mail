@@ -27,7 +27,7 @@ export default function ContactsPage() {
   const [addToListIds, setAddToListIds] = useState<string[]>([]);
   const [selectedListId, setSelectedListId] = useState('');
 
-  const { data: contactsData, isLoading } = useContacts({ page, pageSize: 25, search, status: statusFilter || undefined });
+  const { data: contactsData, isLoading } = useContacts();
   const { data: lists } = useLists();
   const createContact = useCreateContact();
   const deleteContacts = useDeleteContacts();

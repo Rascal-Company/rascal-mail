@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useOrganization } from "./useOrganization";
-import type { DashboardStats } from "@/types";
+import type { Campaign, DashboardStats, CampaignAnalytics } from "@/types";
 
 // Simplified demo version - mock stats from API
 export function useDashboardStats() {
@@ -34,7 +34,7 @@ export function useRecentCampaigns(limit = 5) {
 
   return useQuery({
     queryKey: ["recent-campaigns", currentOrg?.id, limit],
-    queryFn: async () => {
+    queryFn: async (): Promise<Campaign[]> => {
       if (!currentOrg) return [];
 
       const response = await fetch(
@@ -52,7 +52,7 @@ export function useRecentCampaigns(limit = 5) {
 export function useCampaignAnalytics(campaignId: string) {
   return useQuery({
     queryKey: ["campaign-analytics", campaignId],
-    queryFn: async () => {
+    queryFn: async (): Promise<CampaignAnalytics> => {
       const response = await fetch(
         `/api/analytics?type=campaign-analytics&campaignId=${campaignId}`,
       );

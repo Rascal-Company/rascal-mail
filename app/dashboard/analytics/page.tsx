@@ -9,7 +9,7 @@ import { CampaignStats } from '@/types';
 
 export default function AnalyticsPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: campaigns, isLoading: campaignsLoading } = useCampaigns('sent');
+  const { data: campaigns, isLoading: campaignsLoading } = useCampaigns();
 
   // Build stats map for top campaigns
   const campaignStats: Record<string, CampaignStats> = {};

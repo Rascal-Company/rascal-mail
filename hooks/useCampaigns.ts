@@ -16,7 +16,7 @@ export function useCampaigns() {
 
   return useQuery({
     queryKey: ["campaigns", currentOrg?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Campaign[]> => {
       if (!currentOrg) return [];
 
       const response = await fetch(

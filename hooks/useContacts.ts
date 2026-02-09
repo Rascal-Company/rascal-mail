@@ -11,8 +11,13 @@ export function useContacts() {
 
   return useQuery({
     queryKey: ["contacts", currentOrg?.id],
-    queryFn: async () => {
-      if (!currentOrg) return { data: [], total: 0 };
+    queryFn: async (): Promise<{
+      data: Contact[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }> => {
+      if (!currentOrg) return { data: [], total: 0, page: 1, totalPages: 1 };
 
       const response = await fetch(
         `/api/contacts?organizationId=${currentOrg.id}`,
@@ -28,7 +33,7 @@ export function useContacts() {
 export function useContact(id: string) {
   return useQuery({
     queryKey: ["contact", id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Contact> => {
       const response = await fetch(`/api/contacts?id=${id}`);
       if (!response.ok) throw new Error("Failed to fetch contact");
 

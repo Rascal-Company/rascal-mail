@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOrganization } from "./useOrganization";
 import type {
+  Contact,
   ContactList,
   ContactListInsert,
   ContactListUpdate,
@@ -14,7 +15,7 @@ export function useLists() {
 
   return useQuery({
     queryKey: ["lists", currentOrg?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ContactList[]> => {
       if (!currentOrg) return [];
 
       const response = await fetch(
@@ -32,7 +33,7 @@ export function useLists() {
 export function useList(id: string) {
   return useQuery({
     queryKey: ["list", id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ContactList> => {
       const response = await fetch(`/api/lists?id=${id}`);
       if (!response.ok) throw new Error("Failed to fetch list");
 
@@ -46,7 +47,7 @@ export function useList(id: string) {
 export function useListContacts(listId: string) {
   return useQuery({
     queryKey: ["list-contacts", listId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Contact[]> => {
       const response = await fetch(`/api/lists/${listId}/contacts`);
       if (!response.ok) throw new Error("Failed to fetch list contacts");
 
