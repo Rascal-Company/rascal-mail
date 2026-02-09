@@ -16,13 +16,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createAuthClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      const supabase = createAuthClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         toast({ title: 'Kirjautuminen epäonnistui', description: error.message, variant: 'destructive' });

@@ -24,7 +24,6 @@ export default function SignupPage() {
   const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const authClient = createAuthClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +31,7 @@ export default function SignupPage() {
 
     try {
       // Sign up via Rascal AI auth
+      const authClient = createAuthClient();
       const { data, error } = await authClient.auth.signUp({ email, password });
       if (error) {
         toast({

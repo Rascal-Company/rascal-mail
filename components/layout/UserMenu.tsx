@@ -15,9 +15,9 @@ import { createAuthClient } from '@/lib/supabase/client';
 
 export function UserMenu() {
   const router = useRouter();
-  const authClient = createAuthClient();
 
   const handleSignOut = async () => {
+    const authClient = createAuthClient();
     await authClient.auth.signOut();
     router.push('/login');
   };

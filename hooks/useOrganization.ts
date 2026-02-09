@@ -30,11 +30,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
-  const authClient = createAuthClient();
 
   useEffect(() => {
     async function fetchOrgs() {
       try {
+        const authClient = createAuthClient();
         const {
           data: { user },
         } = await authClient.auth.getUser();
@@ -65,7 +65,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
 
     fetchOrgs();
-  }, [authClient]);
+  }, []);
 
   const switchOrg = useCallback(
     (orgId: string) => {
