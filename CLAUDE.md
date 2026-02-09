@@ -133,14 +133,28 @@ describe('properties', () => {
 10. SHOULD test edge cases, realistic input, unexpected input, and value boundaries.
 11. SHOULD NOT test conditions that are caught by the type checker.
 
+## Architecture — Dual-Supabase Auth
+
+This project uses two separate Supabase instances:
+- **Rascal AI Supabase** — authentication (users log in here)
+- **Rascal Mail Supabase** — application data (organizations, contacts, campaigns, etc.)
+
+Because the user is authenticated in Rascal AI but not in Rascal Mail, RLS in Rascal Mail cannot use `auth.uid()`. All data access goes through a service-role admin client.
+
+- **A-1 (MUST)** All API routes (`app/api/**`) MUST use the `withAuth` wrapper from `lib/api/with-auth.ts`. This wrapper:
+  1. Verifies the user via Rascal AI (`createAuthServerClient().auth.getUser()`)
+  2. Looks up org membership in Rascal Mail (`org_members` table)
+  3. Provides `AuthContext` with `client` (admin), `userId`, `organizationId`, `role`
+- **A-2 (MUST)** NEVER use `createDataClient()` from `lib/airtable/client.ts` in API routes — it uses the anon key and RLS will block all queries.
+- **A-3 (MUST)** ALWAYS scope data queries with `.eq("organization_id", organizationId)` using the `organizationId` from `AuthContext`. Never trust client-supplied organization IDs.
+
 ## Code Organization
 
-- `packages/api` - Fastify API server
-  - `packages/api/src/publisher/*.ts` - Specific implementations of publishing to social media platforms
-- `packages/web` - Next.js 15 app with App Router
-- `packages/shared` - Shared types and utilities
-  - `packages/shared/social.ts` - Character size and media validations for social media platforms
-- `packages/api-schema` - API contract schemas using TypeBox
+- Next.js 15 app with App Router (single project, not a monorepo)
+- `lib/api/with-auth.ts` — auth wrapper for all API routes
+- `lib/supabase/server.ts` — `createAuthServerClient()` (Rascal AI), `createAdminClient()` (Rascal Mail service role)
+- `lib/provisioning/provision-organization.ts` — one-time org provisioning from Rascal AI
+- `app/actions/auth/handoff.ts` — auth handoff entry point
 
 ## Remember Shortcuts
 

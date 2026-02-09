@@ -25,7 +25,7 @@ export async function handleAuthHandoff(
     return { error: "No user in session" };
   }
 
-  const result = await provisionOrganization(userId);
+  const result = await provisionOrganization(supabase, userId);
 
   if (!result.allowed) {
     revalidatePath("/", "layout");

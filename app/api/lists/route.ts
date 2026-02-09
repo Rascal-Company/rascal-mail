@@ -1,116 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createAuthServerClient } from "@/lib/supabase/server";
-import { createDataClient } from "@/lib/airtable/client";
+import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api/with-auth";
 
-export async function GET(request: NextRequest) {
-  try {
-    const authClient = await createAuthServerClient();
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
+export const GET = withAuth(async ({ client, organizationId, request }) => {
+  const { searchParams } = new URL(request.url);
+  const listId = searchParams.get("id");
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get("organizationId");
-    const listId = searchParams.get("id");
-
-    const dataClient = await createDataClient();
-
-    // Get single list
-    if (listId) {
-      const { data, error } = await dataClient
-        .from("contact_lists")
-        .select("*")
-        .eq("id", listId)
-        .single();
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ data });
-    }
-
-    // Get all lists for organization
-    if (!organizationId) {
-      return NextResponse.json(
-        { error: "Organization ID required" },
-        { status: 400 },
-      );
-    }
-
-    const { data, error } = await dataClient
+  if (listId) {
+    const { data, error } = await client
       .from("contact_lists")
       .select("*")
+      .eq("id", listId)
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ data: data || [] });
-  } catch (error) {
-    console.error("Lists GET error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const authClient = await createAuthServerClient();
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { organizationId, contactIds, listId, ...listData } = body;
-
-    const dataClient = await createDataClient();
-
-    // Add contacts to list
-    if (contactIds && listId) {
-      const rows = contactIds.map((contactId: string) => ({
-        contact_id: contactId,
-        list_id: listId,
-      }));
-
-      const { error } = await dataClient
-        .from("contact_list_members")
-        .insert(rows);
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ success: true });
-    }
-
-    // Create new list
-    if (!organizationId) {
-      return NextResponse.json(
-        { error: "Organization ID required" },
-        { status: 400 },
-      );
-    }
-
-    const { data, error } = await dataClient
-      .from("contact_lists")
-      .insert({
-        ...listData,
-        organization_id: organizationId,
-      })
-      .select()
       .single();
 
     if (error) {
@@ -118,94 +18,99 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error("Lists POST error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
   }
-}
 
-export async function PUT(request: NextRequest) {
-  try {
-    const authClient = await createAuthServerClient();
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
+  const { data, error } = await client
+    .from("contact_lists")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { id, ...updateData } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: "List ID required" }, { status: 400 });
-    }
-
-    const dataClient = await createDataClient();
-
-    const { data, error } = await dataClient
-      .from("contact_lists")
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ data });
-  } catch (error) {
-    console.error("Lists PUT error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-}
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const authClient = await createAuthServerClient();
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
+  return NextResponse.json({ data: data || [] });
+});
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const POST = withAuth(async ({ client, organizationId, request }) => {
+  const body = await request.json();
+  const { contactIds, listId, organizationId: _ignored, ...listData } = body;
 
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+  if (contactIds && listId) {
+    const rows = contactIds.map((contactId: string) => ({
+      contact_id: contactId,
+      list_id: listId,
+    }));
 
-    if (!id) {
-      return NextResponse.json({ error: "List ID required" }, { status: 400 });
-    }
-
-    const dataClient = await createDataClient();
-
-    const { error } = await dataClient
-      .from("contact_lists")
-      .delete()
-      .eq("id", id);
+    const { error } = await client.from("contact_list_members").insert(rows);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Lists DELETE error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
   }
-}
+
+  const { data, error } = await client
+    .from("contact_lists")
+    .insert({
+      ...listData,
+      organization_id: organizationId,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ data });
+});
+
+export const PUT = withAuth(async ({ client, organizationId, request }) => {
+  const body = await request.json();
+  const { id, ...updateData } = body;
+
+  if (!id) {
+    return NextResponse.json({ error: "List ID required" }, { status: 400 });
+  }
+
+  const { data, error } = await client
+    .from("contact_lists")
+    .update({
+      ...updateData,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("organization_id", organizationId)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ data });
+});
+
+export const DELETE = withAuth(async ({ client, organizationId, request }) => {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "List ID required" }, { status: 400 });
+  }
+
+  const { error } = await client
+    .from("contact_lists")
+    .delete()
+    .eq("id", id)
+    .eq("organization_id", organizationId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+});

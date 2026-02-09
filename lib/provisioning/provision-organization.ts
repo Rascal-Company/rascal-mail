@@ -1,9 +1,5 @@
-"use server";
-
-import {
-  createAdminClient,
-  createAuthServerClient,
-} from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 
 type ProvisionResult =
   | { allowed: false }
@@ -19,9 +15,9 @@ function slugify(text: string): string {
 }
 
 export async function provisionOrganization(
+  authClient: SupabaseClient,
   authUserId: string,
 ): Promise<ProvisionResult> {
-  const authClient = await createAuthServerClient();
 
   const { data: membership, error: membershipError } = await authClient
     .from("org_members")
