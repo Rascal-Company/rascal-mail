@@ -1,26 +1,41 @@
-import Airtable from "airtable";
-import { createDataAdapter } from "./adapter";
+import type { CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 /**
- * Server-side only Airtable client.
- * Uses non-public environment variables that are not exposed to the browser.
+ * Server-side only Supabase data client.
+ * Returns the Rascal Mail Supabase instance for app data (user-scoped via RLS).
+ * This is a lazy-loaded version that can be called from anywhere.
  */
-export function createAirtableBase() {
-  const apiKey = process.env.AIRTABLE_API_KEY;
-  const baseId = process.env.AIRTABLE_BASE_ID;
+export async function createDataClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!apiKey || !baseId) {
-    throw new Error(
-      "Missing Airtable credentials: AIRTABLE_API_KEY and AIRTABLE_BASE_ID required. These should be set in .env.local (server-side only, no NEXT_PUBLIC_ prefix)",
-    );
+  if (!url || !anonKey) {
+    throw new Error("Missing data Supabase environment variables");
   }
 
-  const base = new Airtable({ apiKey }).base(baseId);
-  return base;
-}
+  const cookieStore = await cookies();
 
-// Returns a Supabase-compatible data client (server-side only)
-export function createDataClient() {
-  const base = createAirtableBase();
-  return createDataAdapter(base);
+  return createServerClient(url, anonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value, ...options });
+        } catch {
+          // Ignore
+        }
+      },
+      remove(name: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value: "", ...options });
+        } catch {
+          // Ignore
+        }
+      },
+    },
+  });
 }

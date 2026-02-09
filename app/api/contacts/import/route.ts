@@ -23,35 +23,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
-    let imported = 0;
-    const batchSize = 10; // Airtable batch limit
+    const insertData = contacts.map((contact) => ({
+      organization_id: organizationId,
+      email: contact.email,
+      first_name: contact.first_name || null,
+      last_name: contact.last_name || null,
+      status: "subscribed",
+    }));
 
-    // Process contacts in batches
-    for (let i = 0; i < contacts.length; i += batchSize) {
-      const batch = contacts.slice(i, i + batchSize);
-      const insertData = batch.map((contact) => ({
-        organization_id: [organizationId],
-        email: contact.email,
-        first_name: contact.first_name || "",
-        last_name: contact.last_name || "",
-        status: "subscribed",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
+    const { data, error } = await dataClient
+      .from("contacts")
+      .insert(insertData)
+      .select();
 
-      try {
-        const { data } = await dataClient.from("Contacts").insert(insertData);
-        imported += data?.length || 0;
-      } catch (error) {
-        console.error("Batch import error:", error);
-      }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      imported,
+      imported: data?.length || 0,
       total: contacts.length,
     });
   } catch (error) {

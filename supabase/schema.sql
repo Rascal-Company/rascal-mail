@@ -174,22 +174,22 @@ ALTER TABLE email_sends ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaign_stats ENABLE ROW LEVEL SECURITY;
 
 -- Function to get user org IDs
-CREATE OR REPLACE FUNCTION auth.user_org_ids()
+CREATE OR REPLACE FUNCTION public.user_org_ids()
 RETURNS SETOF UUID AS $$
   SELECT organization_id FROM org_members WHERE user_id = auth.uid()
 $$ LANGUAGE SQL SECURITY DEFINER STABLE;
 
 -- RLS Policies
 CREATE POLICY "org_members_own" ON org_members FOR ALL USING (user_id = auth.uid());
-CREATE POLICY "organizations_member" ON organizations FOR ALL USING (id IN (SELECT auth.user_org_ids()));
-CREATE POLICY "contacts_org" ON contacts FOR ALL USING (organization_id IN (SELECT auth.user_org_ids()));
-CREATE POLICY "contact_lists_org" ON contact_lists FOR ALL USING (organization_id IN (SELECT auth.user_org_ids()));
-CREATE POLICY "contact_list_members_org" ON contact_list_members FOR ALL USING (list_id IN (SELECT id FROM contact_lists WHERE organization_id IN (SELECT auth.user_org_ids())));
-CREATE POLICY "email_templates_org" ON email_templates FOR ALL USING (organization_id IN (SELECT auth.user_org_ids()));
-CREATE POLICY "campaigns_org" ON campaigns FOR ALL USING (organization_id IN (SELECT auth.user_org_ids()));
-CREATE POLICY "campaign_recipients_org" ON campaign_recipients FOR ALL USING (campaign_id IN (SELECT id FROM campaigns WHERE organization_id IN (SELECT auth.user_org_ids())));
-CREATE POLICY "email_sends_org" ON email_sends FOR ALL USING (organization_id IN (SELECT auth.user_org_ids()));
-CREATE POLICY "campaign_stats_org" ON campaign_stats FOR ALL USING (campaign_id IN (SELECT id FROM campaigns WHERE organization_id IN (SELECT auth.user_org_ids())));
+CREATE POLICY "organizations_member" ON organizations FOR ALL USING (id IN (SELECT public.user_org_ids()));
+CREATE POLICY "contacts_org" ON contacts FOR ALL USING (organization_id IN (SELECT public.user_org_ids()));
+CREATE POLICY "contact_lists_org" ON contact_lists FOR ALL USING (organization_id IN (SELECT public.user_org_ids()));
+CREATE POLICY "contact_list_members_org" ON contact_list_members FOR ALL USING (list_id IN (SELECT id FROM contact_lists WHERE organization_id IN (SELECT public.user_org_ids())));
+CREATE POLICY "email_templates_org" ON email_templates FOR ALL USING (organization_id IN (SELECT public.user_org_ids()));
+CREATE POLICY "campaigns_org" ON campaigns FOR ALL USING (organization_id IN (SELECT public.user_org_ids()));
+CREATE POLICY "campaign_recipients_org" ON campaign_recipients FOR ALL USING (campaign_id IN (SELECT id FROM campaigns WHERE organization_id IN (SELECT public.user_org_ids())));
+CREATE POLICY "email_sends_org" ON email_sends FOR ALL USING (organization_id IN (SELECT public.user_org_ids()));
+CREATE POLICY "campaign_stats_org" ON campaign_stats FOR ALL USING (campaign_id IN (SELECT id FROM campaigns WHERE organization_id IN (SELECT public.user_org_ids())));
 
 -- Triggers
 CREATE OR REPLACE FUNCTION update_list_contact_count()

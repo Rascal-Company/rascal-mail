@@ -17,13 +17,13 @@ export async function GET(
     }
 
     const { id: listId } = await params;
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Get contact list members for this list
     const { data: members, error: membersError } = await dataClient
-      .from("Contact List Members")
-      .eq("list_id", listId)
-      .select();
+      .from("contact_list_members")
+      .select("*")
+      .eq("list_id", listId);
 
     if (membersError) {
       return NextResponse.json(
@@ -36,14 +36,14 @@ export async function GET(
       return NextResponse.json({ data: [] });
     }
 
-    // Get contact IDs (Airtable returns linked records as arrays)
-    const contactIds = members.map((m: any) => m.contact_id[0]);
+    // Get contact IDs
+    const contactIds = members.map((m: any) => m.contact_id);
 
     // Fetch actual contacts
     const { data: contacts, error: contactsError } = await dataClient
-      .from("Contacts")
-      .in("id", contactIds)
-      .select();
+      .from("contacts")
+      .select("*")
+      .in("id", contactIds);
 
     if (contactsError) {
       return NextResponse.json(

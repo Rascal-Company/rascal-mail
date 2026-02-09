@@ -13,13 +13,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Get org memberships for this user
     const { data: members, error: membersError } = await dataClient
-      .from("Org Members")
-      .eq("user_id", user.id)
-      .select();
+      .from("org_members")
+      .select("*")
+      .eq("user_id", user.id);
 
     if (membersError) {
       return NextResponse.json(
@@ -33,17 +33,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get organizations
-    const orgIds = members
-      .map((m: any) => {
-        const orgId = m.organization_id;
-        return Array.isArray(orgId) ? orgId[0] : orgId;
-      })
-      .filter(Boolean);
+    const orgIds = members.map((m: any) => m.organization_id).filter(Boolean);
 
     const { data: orgs, error: orgsError } = await dataClient
-      .from("Organizations")
-      .in("id", orgIds)
-      .select();
+      .from("organizations")
+      .select("*")
+      .in("id", orgIds);
 
     if (orgsError) {
       return NextResponse.json({ error: orgsError.message }, { status: 500 });
@@ -80,16 +75,18 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Update organization
     const { data, error } = await dataClient
-      .from("Organizations")
-      .eq("id", id)
+      .from("organizations")
       .update({
         ...updateData,
         updated_at: new Date().toISOString(),
-      });
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -117,18 +114,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Create organization
-    const { data: orgs, error: orgError } = await dataClient
-      .from("Organizations")
-      .insert({
-        ...body,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+    const { data: org, error: orgError } = await dataClient
+      .from("organizations")
+      .insert(body)
+      .select()
+      .single();
 
-    if (orgError || !orgs || orgs.length === 0) {
+    if (orgError || !org) {
       return NextResponse.json(
         { error: orgError?.message || "Failed to create organization" },
         { status: 500 },
@@ -136,15 +131,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create org membership
-    await dataClient.from("Org Members").insert({
+    await dataClient.from("org_members").insert({
       user_id: user.id,
       email: user.email!,
-      organization_id: [String(orgs[0].id)],
+      organization_id: org.id,
       role: "owner",
-      created_at: new Date().toISOString(),
     });
 
-    return NextResponse.json({ data: orgs[0] });
+    return NextResponse.json({ data: org });
   } catch (error) {
     console.error("Organizations POST error:", error);
     return NextResponse.json(

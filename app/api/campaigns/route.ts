@@ -17,20 +17,21 @@ export async function GET(request: NextRequest) {
     const organizationId = searchParams.get("organizationId");
     const campaignId = searchParams.get("id");
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Get single campaign
     if (campaignId) {
       const { data, error } = await dataClient
-        .from("Campaigns")
+        .from("campaigns")
+        .select("*")
         .eq("id", campaignId)
-        .select();
+        .single();
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ data: data?.[0] || null });
+      return NextResponse.json({ data });
     }
 
     // Get all campaigns for organization
@@ -42,10 +43,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { data, error } = await dataClient
-      .from("Campaigns")
+      .from("campaigns")
+      .select("*")
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false })
-      .select();
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -82,20 +83,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
-    const { data, error } = await dataClient.from("Campaigns").insert({
-      ...campaignData,
-      organization_id: [organizationId],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    const { data, error } = await dataClient
+      .from("campaigns")
+      .insert({
+        ...campaignData,
+        organization_id: organizationId,
+      })
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data?.[0] });
+    return NextResponse.json({ data });
   } catch (error) {
     console.error("Campaigns POST error:", error);
     return NextResponse.json(
@@ -126,15 +129,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     const { data, error } = await dataClient
-      .from("Campaigns")
-      .eq("id", id)
+      .from("campaigns")
       .update({
         ...updateData,
         updated_at: new Date().toISOString(),
-      });
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -171,9 +176,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
-    const { error } = await dataClient.from("Campaigns").eq("id", id).delete();
+    const { error } = await dataClient.from("campaigns").delete().eq("id", id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

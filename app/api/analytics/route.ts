@@ -80,14 +80,14 @@ export async function GET(request: NextRequest) {
       }
 
       const limit = parseInt(searchParams.get("limit") || "5");
-      const dataClient = createDataClient();
+      const dataClient = await createDataClient();
 
       const { data, error } = await dataClient
-        .from("Campaigns")
+        .from("campaigns")
+        .select("*")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
-        .range(0, limit - 1)
-        .select();
+        .limit(limit);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

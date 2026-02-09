@@ -17,20 +17,21 @@ export async function GET(request: NextRequest) {
     const organizationId = searchParams.get("organizationId");
     const listId = searchParams.get("id");
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Get single list
     if (listId) {
       const { data, error } = await dataClient
-        .from("Contact Lists")
+        .from("contact_lists")
+        .select("*")
         .eq("id", listId)
-        .select();
+        .single();
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ data: data?.[0] || null });
+      return NextResponse.json({ data });
     }
 
     // Get all lists for organization
@@ -42,10 +43,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { data, error } = await dataClient
-      .from("Contact Lists")
+      .from("contact_lists")
+      .select("*")
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false })
-      .select();
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -75,18 +76,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { organizationId, contactIds, listId, ...listData } = body;
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     // Add contacts to list
     if (contactIds && listId) {
       const rows = contactIds.map((contactId: string) => ({
-        contact_id: [contactId],
-        list_id: [listId],
-        created_at: new Date().toISOString(),
+        contact_id: contactId,
+        list_id: listId,
       }));
 
       const { error } = await dataClient
-        .from("Contact List Members")
+        .from("contact_list_members")
         .insert(rows);
 
       if (error) {
@@ -104,18 +104,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await dataClient.from("Contact Lists").insert({
-      ...listData,
-      organization_id: [organizationId],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    const { data, error } = await dataClient
+      .from("contact_lists")
+      .insert({
+        ...listData,
+        organization_id: organizationId,
+      })
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data?.[0] });
+    return NextResponse.json({ data });
   } catch (error) {
     console.error("Lists POST error:", error);
     return NextResponse.json(
@@ -143,15 +145,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "List ID required" }, { status: 400 });
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     const { data, error } = await dataClient
-      .from("Contact Lists")
-      .eq("id", id)
+      .from("contact_lists")
       .update({
         ...updateData,
         updated_at: new Date().toISOString(),
-      });
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -185,12 +189,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "List ID required" }, { status: 400 });
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     const { error } = await dataClient
-      .from("Contact Lists")
-      .eq("id", id)
-      .delete();
+      .from("contact_lists")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

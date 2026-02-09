@@ -23,13 +23,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     const { data, error } = await dataClient
-      .from("Contacts")
+      .from("contacts")
+      .select("*")
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false })
-      .select();
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -69,20 +69,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
-    const { data, error } = await dataClient.from("Contacts").insert({
-      ...contactData,
-      organization_id: [organizationId],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    const { data, error } = await dataClient
+      .from("contacts")
+      .insert({
+        ...contactData,
+        organization_id: organizationId,
+      })
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data?.[0] });
+    return NextResponse.json({ data });
   } catch (error) {
     console.error("Contacts POST error:", error);
     return NextResponse.json(
@@ -113,15 +115,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
     const { data, error } = await dataClient
-      .from("Contacts")
-      .eq("id", id)
+      .from("contacts")
       .update({
         ...updateData,
         updated_at: new Date().toISOString(),
-      });
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -159,14 +163,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     const ids = idsParam.split(",");
-    const dataClient = createDataClient();
+    const dataClient = await createDataClient();
 
-    // Delete contacts one by one
-    for (const id of ids) {
-      const { error } = await dataClient.from("Contacts").eq("id", id).delete();
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
+    // Delete contacts using in() for batch delete
+    const { error } = await dataClient.from("contacts").delete().in("id", ids);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
