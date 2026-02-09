@@ -1,10 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -40,6 +37,14 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Rascal brand colors
+        rascal: {
+          orange: "#E87B4E",
+          "orange-hover": "#D66A3D",
+          "orange-light": "#F5E6DC",
+          dark: "#1A1A1A",
+          "dark-alt": "#2C2C2C",
         },
       },
       borderRadius: {
