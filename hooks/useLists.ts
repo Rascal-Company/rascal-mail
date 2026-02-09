@@ -1,61 +1,57 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { useOrganization } from './useOrganization';
-import { ContactList, ContactListInsert, ContactListUpdate } from '@/types';
-import { toast } from './useToast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useOrganization } from "./useOrganization";
+import type {
+  ContactList,
+  ContactListInsert,
+  ContactListUpdate,
+} from "@/types";
+import { toast } from "./useToast";
 
 export function useLists() {
   const { currentOrg } = useOrganization();
-  const supabase = createClient();
 
   return useQuery({
-    queryKey: ['lists', currentOrg?.id],
+    queryKey: ["lists", currentOrg?.id],
     queryFn: async () => {
       if (!currentOrg) return [];
-      const { data, error } = await supabase
-        .from('contact_lists')
-        .select('*')
-        .eq('organization_id', currentOrg.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as ContactList[];
+
+      const response = await fetch(
+        `/api/lists?organizationId=${currentOrg.id}`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch lists");
+
+      const { data } = await response.json();
+      return data || [];
     },
     enabled: !!currentOrg,
   });
 }
 
 export function useList(id: string) {
-  const supabase = createClient();
-
   return useQuery({
-    queryKey: ['list', id],
+    queryKey: ["list", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contact_lists')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      return data as ContactList;
+      const response = await fetch(`/api/lists?id=${id}`);
+      if (!response.ok) throw new Error("Failed to fetch list");
+
+      const { data } = await response.json();
+      return data;
     },
     enabled: !!id,
   });
 }
 
 export function useListContacts(listId: string) {
-  const supabase = createClient();
-
   return useQuery({
-    queryKey: ['list-contacts', listId],
+    queryKey: ["list-contacts", listId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contact_list_members')
-        .select('contact_id, contacts(*)')
-        .eq('list_id', listId);
-      if (error) throw error;
-      return data.map((m: any) => m.contacts);
+      const response = await fetch(`/api/lists/${listId}/contacts`);
+      if (!response.ok) throw new Error("Failed to fetch list contacts");
+
+      const { data } = await response.json();
+      return data || [];
     },
     enabled: !!listId,
   });
@@ -63,99 +59,125 @@ export function useListContacts(listId: string) {
 
 export function useCreateList() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const { currentOrg } = useOrganization();
 
   return useMutation({
-    mutationFn: async (list: Omit<ContactListInsert, 'organization_id'>) => {
-      if (!currentOrg) throw new Error('No organization selected');
-      const { data, error } = await supabase
-        .from('contact_lists')
-        .insert({ ...list, organization_id: currentOrg.id })
-        .select()
-        .single();
-      if (error) throw error;
+    mutationFn: async (list: Omit<ContactListInsert, "organization_id">) => {
+      if (!currentOrg) throw new Error("No organization selected");
+
+      const response = await fetch("/api/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...list, organizationId: currentOrg.id }),
+      });
+
+      if (!response.ok) throw new Error("Failed to create list");
+
+      const { data } = await response.json();
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
-      toast({ title: 'Lista luotu onnistuneesti' });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast({ title: "Lista luotu onnistuneesti" });
     },
     onError: (error: Error) => {
-      toast({ title: 'Virhe', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Virhe",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }
 
 export function useUpdateList() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...update }: ContactListUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from('contact_lists')
-        .update(update)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
+    mutationFn: async ({
+      id,
+      ...update
+    }: ContactListUpdate & { id: string }) => {
+      const response = await fetch("/api/lists", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...update }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update list");
+
+      const { data } = await response.json();
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
-      toast({ title: 'Lista päivitetty' });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast({ title: "Lista päivitetty" });
     },
     onError: (error: Error) => {
-      toast({ title: 'Virhe', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Virhe",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }
 
 export function useDeleteList() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('contact_lists')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      const response = await fetch(`/api/lists?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete list");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
-      toast({ title: 'Lista poistettu' });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      toast({ title: "Lista poistettu" });
     },
     onError: (error: Error) => {
-      toast({ title: 'Virhe', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Virhe",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }
 
 export function useAddContactsToList() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   return useMutation({
-    mutationFn: async ({ listId, contactIds }: { listId: string; contactIds: string[] }) => {
-      const rows = contactIds.map((contactId) => ({
-        contact_id: contactId,
-        list_id: listId,
-      }));
-      const { error } = await supabase
-        .from('contact_list_members')
-        .upsert(rows, { onConflict: 'contact_id,list_id' });
-      if (error) throw error;
+    mutationFn: async ({
+      listId,
+      contactIds,
+    }: {
+      listId: string;
+      contactIds: string[];
+    }) => {
+      const response = await fetch("/api/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listId, contactIds }),
+      });
+
+      if (!response.ok) throw new Error("Failed to add contacts to list");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
-      queryClient.invalidateQueries({ queryKey: ['list-contacts'] });
-      toast({ title: 'Kontaktit lisätty listalle' });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
+      queryClient.invalidateQueries({ queryKey: ["list-contacts"] });
+      toast({ title: "Kontaktit lisätty listalle" });
     },
     onError: (error: Error) => {
-      toast({ title: 'Virhe', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Virhe",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }

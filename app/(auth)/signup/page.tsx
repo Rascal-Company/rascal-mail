@@ -1,24 +1,30 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { createAuthClient, createDataClient } from '@/lib/supabase/client';
-import { toast } from '@/hooks/useToast';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { createAuthClient } from "@/lib/supabase/client";
+import { toast } from "@/hooks/useToast";
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [orgName, setOrgName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const authClient = createAuthClient();
-  const dataClient = createDataClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,33 +34,49 @@ export default function SignupPage() {
       // Sign up via Rascal AI auth
       const { data, error } = await authClient.auth.signUp({ email, password });
       if (error) {
-        toast({ title: 'Rekisteröinti epäonnistui', description: error.message, variant: 'destructive' });
+        toast({
+          title: "Rekisteröinti epäonnistui",
+          description: error.message,
+          variant: "destructive",
+        });
         return;
       }
 
       if (data.user) {
-        // Create organization in Rascal Mail database
-        const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-        const { data: org, error: orgError } = await dataClient
-          .from('organizations')
-          .insert({ name: orgName, slug })
-          .select()
-          .single();
+        // Create organization via API
+        const slug = orgName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-")
+          .replace(/-+/g, "-");
 
-        if (org && !orgError) {
-          await dataClient.from('org_members').insert({
-            user_id: data.user.id,
-            email: email,
-            organization_id: org.id,
-            role: 'owner',
-          });
+        const orgResponse = await fetch("/api/organizations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: orgName,
+            slug,
+            from_name: orgName,
+            from_email: email,
+            reply_to_email: email,
+          }),
+        });
+
+        if (!orgResponse.ok) {
+          throw new Error("Failed to create organization");
         }
 
-        toast({ title: 'Tili luotu!', description: 'Voit nyt kirjautua sisään' });
-        router.push('/login');
+        toast({
+          title: "Tili luotu!",
+          description: "Voit nyt kirjautua sisään",
+        });
+        router.push("/login");
       }
     } catch {
-      toast({ title: 'Virhe', description: 'Yhteysongelma, yritä uudelleen', variant: 'destructive' });
+      toast({
+        title: "Virhe",
+        description: "Yhteysongelma, yritä uudelleen",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -109,10 +131,10 @@ export default function SignupPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Luodaan tiliä...' : 'Rekisteröidy'}
+            {loading ? "Luodaan tiliä..." : "Rekisteröidy"}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Onko sinulla jo tili?{' '}
+            Onko sinulla jo tili?{" "}
             <Link href="/login" className="text-primary hover:underline">
               Kirjaudu sisään
             </Link>

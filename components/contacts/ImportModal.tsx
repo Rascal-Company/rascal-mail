@@ -1,18 +1,30 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import Papa from 'papaparse';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { Upload, FileSpreadsheet } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { useOrganization } from '@/hooks/useOrganization';
-import { toast } from '@/hooks/useToast';
-import { useQueryClient } from '@tanstack/react-query';
-import { ImportResult } from '@/types';
+import { useState, useCallback } from "react";
+import Papa from "papaparse";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Upload, FileSpreadsheet } from "lucide-react";
+import { useOrganization } from "@/hooks/useOrganization";
+import { toast } from "@/hooks/useToast";
+import { useQueryClient } from "@tanstack/react-query";
+import type { ImportResult } from "@/types";
 
 interface ImportModalProps {
   open: boolean;
@@ -20,12 +32,10 @@ interface ImportModalProps {
 }
 
 const FIELD_OPTIONS = [
-  { value: 'skip', label: 'Ohita' },
-  { value: 'email', label: 'Sähköposti' },
-  { value: 'first_name', label: 'Etunimi' },
-  { value: 'last_name', label: 'Sukunimi' },
-  { value: 'company', label: 'Yritys' },
-  { value: 'phone', label: 'Puhelin' },
+  { value: "skip", label: "Ohita" },
+  { value: "email", label: "Sähköposti" },
+  { value: "first_name", label: "Etunimi" },
+  { value: "last_name", label: "Sukunimi" },
 ];
 
 export function ImportModal({ open, onOpenChange }: ImportModalProps) {
@@ -37,37 +47,40 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const { currentOrg } = useOrganization();
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-    setFile(selectedFile);
-    setResult(null);
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0];
+      if (!selectedFile) return;
+      setFile(selectedFile);
+      setResult(null);
 
-    Papa.parse(selectedFile, {
-      preview: 6,
-      complete: (results) => {
-        const rows = results.data as string[][];
-        if (rows.length > 0) {
-          setHeaders(rows[0]);
-          setPreview(rows.slice(1, 6));
-          // Auto-map columns
-          const autoMap: Record<number, string> = {};
-          rows[0].forEach((header, index) => {
-            const lower = header.toLowerCase().trim();
-            if (lower.includes('email') || lower.includes('sähköposti')) autoMap[index] = 'email';
-            else if (lower.includes('first') || lower.includes('etunimi')) autoMap[index] = 'first_name';
-            else if (lower.includes('last') || lower.includes('sukunimi')) autoMap[index] = 'last_name';
-            else if (lower.includes('company') || lower.includes('yritys')) autoMap[index] = 'company';
-            else if (lower.includes('phone') || lower.includes('puhelin')) autoMap[index] = 'phone';
-          });
-          setMapping(autoMap);
-        }
-      },
-    });
-  }, []);
+      Papa.parse(selectedFile, {
+        preview: 6,
+        complete: (results) => {
+          const rows = results.data as string[][];
+          if (rows.length > 0) {
+            setHeaders(rows[0]);
+            setPreview(rows.slice(1, 6));
+            // Auto-map columns
+            const autoMap: Record<number, string> = {};
+            rows[0].forEach((header, index) => {
+              const lower = header.toLowerCase().trim();
+              if (lower.includes("email") || lower.includes("sähköposti"))
+                autoMap[index] = "email";
+              else if (lower.includes("first") || lower.includes("etunimi"))
+                autoMap[index] = "first_name";
+              else if (lower.includes("last") || lower.includes("sukunimi"))
+                autoMap[index] = "last_name";
+            });
+            setMapping(autoMap);
+          }
+        },
+      });
+    },
+    [],
+  );
 
   const handleImport = async () => {
     if (!file || !currentOrg) return;
@@ -75,69 +88,80 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
     setImporting(true);
     setProgress(0);
 
-    let imported = 0;
-    let duplicates = 0;
-    let errors = 0;
-    let total = 0;
-
     Papa.parse(file, {
       header: false,
       skipEmptyLines: true,
       complete: async (results) => {
         const rows = (results.data as string[][]).slice(1);
-        total = rows.length;
-        const emailIndex = Object.entries(mapping).find(([_, v]) => v === 'email')?.[0];
+        const total = rows.length;
+        const emailIndex = Object.entries(mapping).find(
+          ([_, v]) => v === "email",
+        )?.[0];
 
         if (emailIndex === undefined) {
-          toast({ title: 'Virhe', description: 'Sähköpostikenttä on pakollinen', variant: 'destructive' });
+          toast({
+            title: "Virhe",
+            description: "Sähköpostikenttä on pakollinen",
+            variant: "destructive",
+          });
           setImporting(false);
           return;
         }
 
-        const batchSize = 50;
-        for (let i = 0; i < rows.length; i += batchSize) {
-          const batch = rows.slice(i, i + batchSize);
-          const contacts = batch
-            .map((row) => {
-              const contact: Record<string, string> = {};
-              Object.entries(mapping).forEach(([colIndex, field]) => {
-                if (field !== 'skip') {
-                  contact[field] = row[parseInt(colIndex)] || '';
-                }
-              });
-              return contact;
-            })
-            .filter((c) => c.email);
+        // Map CSV rows to contact objects
+        const contacts = rows
+          .map((row) => {
+            const contact: Record<string, string> = {};
+            Object.entries(mapping).forEach(([colIndex, field]) => {
+              if (field !== "skip") {
+                contact[field] = row[parseInt(colIndex)] || "";
+              }
+            });
+            return contact;
+          })
+          .filter((c) => c.email);
 
-          const insertData = contacts.map((c) => ({
-            organization_id: currentOrg.id,
-            email: c.email,
-            first_name: c.first_name || null,
-            last_name: c.last_name || null,
-            company: c.company || null,
-            phone: c.phone || null,
-            source: 'csv_import',
-          }));
+        try {
+          // Send all contacts to API endpoint
+          const response = await fetch("/api/contacts/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              organizationId: currentOrg.id,
+              contacts,
+            }),
+          });
 
-          const { data, error } = await supabase
-            .from('contacts')
-            .upsert(insertData, { onConflict: 'organization_id,email', ignoreDuplicates: true })
-            .select();
-
-          if (error) {
-            errors += batch.length;
-          } else {
-            imported += data?.length || 0;
-            duplicates += batch.length - (data?.length || 0);
+          if (!response.ok) {
+            throw new Error("Import failed");
           }
 
-          setProgress(Math.round(((i + batch.length) / total) * 100));
-        }
+          const { imported } = await response.json();
 
-        setResult({ total, imported, duplicates, errors });
-        setImporting(false);
-        queryClient.invalidateQueries({ queryKey: ['contacts'] });
-        toast({ title: `${imported} kontaktia tuotu onnistuneesti` });
+          setProgress(100);
+          setResult({
+            total,
+            imported,
+            duplicates: 0,
+            errors: total - imported,
+          });
+          queryClient.invalidateQueries({ queryKey: ["contacts"] });
+          toast({ title: `${imported} kontaktia tuotu onnistuneesti` });
+        } catch (error) {
+          toast({
+            title: "Virhe",
+            description: "Kontaktien tuonti epäonnistui",
+            variant: "destructive",
+          });
+          setResult({
+            total,
+            imported: 0,
+            duplicates: 0,
+            errors: total,
+          });
+        } finally {
+          setImporting(false);
+        }
       },
     });
   };
@@ -152,7 +176,13 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) reset();
+      }}
+    >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Tuo kontakteja CSV-tiedostosta</DialogTitle>
@@ -182,7 +212,9 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-lg border p-4 text-center">
-                <p className="text-2xl font-bold text-primary">{result.imported}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {result.imported}
+                </p>
                 <p className="text-sm text-muted-foreground">Tuotu</p>
               </div>
               <div className="rounded-lg border p-4 text-center">
@@ -199,8 +231,10 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                 <div key={index} className="flex items-center gap-3">
                   <span className="text-sm w-32 truncate">{header}</span>
                   <Select
-                    value={mapping[index] || 'skip'}
-                    onValueChange={(value) => setMapping({ ...mapping, [index]: value })}
+                    value={mapping[index] || "skip"}
+                    onValueChange={(value) =>
+                      setMapping({ ...mapping, [index]: value })
+                    }
                   >
                     <SelectTrigger className="w-48">
                       <SelectValue />
@@ -220,7 +254,9 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
             {importing && (
               <div className="space-y-2">
                 <Progress value={progress} />
-                <p className="text-sm text-muted-foreground text-center">{progress}%</p>
+                <p className="text-sm text-muted-foreground text-center">
+                  {progress}%
+                </p>
               </div>
             )}
           </div>
@@ -228,12 +264,26 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
 
         <DialogFooter>
           {result ? (
-            <Button onClick={() => { onOpenChange(false); reset(); }}>Sulje</Button>
+            <Button
+              onClick={() => {
+                onOpenChange(false);
+                reset();
+              }}
+            >
+              Sulje
+            </Button>
           ) : file ? (
             <>
-              <Button variant="outline" onClick={reset} disabled={importing}>Takaisin</Button>
-              <Button onClick={handleImport} disabled={importing || !Object.values(mapping).includes('email')}>
-                {importing ? 'Tuodaan...' : 'Tuo kontaktit'}
+              <Button variant="outline" onClick={reset} disabled={importing}>
+                Takaisin
+              </Button>
+              <Button
+                onClick={handleImport}
+                disabled={
+                  importing || !Object.values(mapping).includes("email")
+                }
+              >
+                {importing ? "Tuodaan..." : "Tuo kontaktit"}
               </Button>
             </>
           ) : null}
