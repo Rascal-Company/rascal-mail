@@ -8,7 +8,7 @@ export const GET = withAuth(async ({ client, organizationId, request }) => {
   if (campaignId) {
     const { data, error } = await client
       .from("campaigns")
-      .select("*")
+      .select("*, campaign_recipients(list_id)")
       .eq("id", campaignId)
       .eq("organization_id", organizationId)
       .single();
@@ -35,7 +35,7 @@ export const GET = withAuth(async ({ client, organizationId, request }) => {
 
 export const POST = withAuth(async ({ client, organizationId, request }) => {
   const body = await request.json();
-  const { organizationId: _ignored, ...campaignData } = body;
+  const { organizationId: _ignored, list_ids, ...campaignData } = body;
 
   const { data, error } = await client
     .from("campaigns")
@@ -50,12 +50,20 @@ export const POST = withAuth(async ({ client, organizationId, request }) => {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (Array.isArray(list_ids) && list_ids.length > 0 && data) {
+    const recipients = list_ids.map((listId: string) => ({
+      campaign_id: data.id,
+      list_id: listId,
+    }));
+    await client.from("campaign_recipients").insert(recipients);
+  }
+
   return NextResponse.json({ data });
 });
 
 export const PUT = withAuth(async ({ client, organizationId, request }) => {
   const body = await request.json();
-  const { id, ...updateData } = body;
+  const { id, list_ids, ...updateData } = body;
 
   if (!id) {
     return NextResponse.json(
@@ -77,6 +85,18 @@ export const PUT = withAuth(async ({ client, organizationId, request }) => {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (Array.isArray(list_ids)) {
+    await client.from("campaign_recipients").delete().eq("campaign_id", id);
+
+    if (list_ids.length > 0) {
+      const recipients = list_ids.map((listId: string) => ({
+        campaign_id: id,
+        list_id: listId,
+      }));
+      await client.from("campaign_recipients").insert(recipients);
+    }
   }
 
   return NextResponse.json({ data });

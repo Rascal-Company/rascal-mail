@@ -66,19 +66,28 @@ export function useCreateCampaign() {
   const { currentOrg } = useOrganization();
 
   return useMutation({
-    mutationFn: async (campaign: Omit<CampaignInsert, "organization_id">) => {
+    mutationFn: async (
+      campaign: Omit<CampaignInsert, "organization_id"> & {
+        list_ids?: string[];
+      },
+    ) => {
       if (!currentOrg) throw new Error("No organization selected");
 
+      const { list_ids, ...campaignData } = campaign;
       const response = await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...campaign, organizationId: currentOrg.id }),
+        body: JSON.stringify({
+          ...campaignData,
+          organizationId: currentOrg.id,
+          list_ids,
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to create campaign");
 
       const { data } = await response.json();
-      return data;
+      return data as Campaign;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
@@ -98,17 +107,21 @@ export function useUpdateCampaign() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...update }: CampaignUpdate & { id: string }) => {
+    mutationFn: async ({
+      id,
+      list_ids,
+      ...update
+    }: CampaignUpdate & { id: string; list_ids?: string[] }) => {
       const response = await fetch("/api/campaigns", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...update }),
+        body: JSON.stringify({ id, list_ids, ...update }),
       });
 
       if (!response.ok) throw new Error("Failed to update campaign");
 
       const { data } = await response.json();
-      return data;
+      return data as Campaign;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaigns"] });
@@ -117,6 +130,39 @@ export function useUpdateCampaign() {
     onError: (error: Error) => {
       toast({
         title: "Virhe",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useAutoSaveCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      list_ids,
+      ...update
+    }: CampaignUpdate & { id: string; list_ids?: string[] }) => {
+      const response = await fetch("/api/campaigns", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, list_ids, ...update }),
+      });
+
+      if (!response.ok) throw new Error("Failed to auto-save campaign");
+
+      const { data } = await response.json();
+      return data as Campaign;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Virhe tallennuksessa",
         description: error.message,
         variant: "destructive",
       });

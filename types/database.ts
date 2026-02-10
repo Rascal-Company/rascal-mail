@@ -56,7 +56,7 @@ export interface Database {
           user_id: string;
           email: string;
           organization_id: string;
-          role: 'owner' | 'admin' | 'member';
+          role: "owner" | "admin" | "member";
           created_at: string;
         };
         Insert: {
@@ -64,7 +64,7 @@ export interface Database {
           user_id: string;
           email: string;
           organization_id: string;
-          role?: 'owner' | 'admin' | 'member';
+          role?: "owner" | "admin" | "member";
           created_at?: string;
         };
         Update: {
@@ -72,7 +72,7 @@ export interface Database {
           user_id?: string;
           email?: string;
           organization_id?: string;
-          role?: 'owner' | 'admin' | 'member';
+          role?: "owner" | "admin" | "member";
           created_at?: string;
         };
       };
@@ -85,7 +85,7 @@ export interface Database {
           last_name: string | null;
           company: string | null;
           phone: string | null;
-          status: 'subscribed' | 'unsubscribed' | 'bounced' | 'complained';
+          status: "subscribed" | "unsubscribed" | "bounced" | "complained";
           tags: string[];
           custom_fields: Json;
           source: string;
@@ -102,7 +102,7 @@ export interface Database {
           last_name?: string | null;
           company?: string | null;
           phone?: string | null;
-          status?: 'subscribed' | 'unsubscribed' | 'bounced' | 'complained';
+          status?: "subscribed" | "unsubscribed" | "bounced" | "complained";
           tags?: string[];
           custom_fields?: Json;
           source?: string;
@@ -119,7 +119,7 @@ export interface Database {
           last_name?: string | null;
           company?: string | null;
           phone?: string | null;
-          status?: 'subscribed' | 'unsubscribed' | 'bounced' | 'complained';
+          status?: "subscribed" | "unsubscribed" | "bounced" | "complained";
           tags?: string[];
           custom_fields?: Json;
           source?: string;
@@ -226,16 +226,22 @@ export interface Database {
         Row: {
           id: string;
           organization_id: string;
-          name: string;
-          subject: string;
+          name: string | null;
+          subject: string | null;
           preview_text: string | null;
-          from_name: string;
-          from_email: string;
+          from_name: string | null;
+          from_email: string | null;
           reply_to: string | null;
           template_id: string | null;
-          html_content: string;
+          html_content: string | null;
           design_json: Json | null;
-          status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled';
+          status:
+            | "draft"
+            | "scheduled"
+            | "sending"
+            | "sent"
+            | "paused"
+            | "cancelled";
           scheduled_at: string | null;
           started_at: string | null;
           completed_at: string | null;
@@ -246,16 +252,22 @@ export interface Database {
         Insert: {
           id?: string;
           organization_id: string;
-          name: string;
-          subject: string;
+          name?: string | null;
+          subject?: string | null;
           preview_text?: string | null;
-          from_name: string;
-          from_email: string;
+          from_name?: string | null;
+          from_email?: string | null;
           reply_to?: string | null;
           template_id?: string | null;
-          html_content: string;
+          html_content?: string | null;
           design_json?: Json | null;
-          status?: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled';
+          status?:
+            | "draft"
+            | "scheduled"
+            | "sending"
+            | "sent"
+            | "paused"
+            | "cancelled";
           scheduled_at?: string | null;
           started_at?: string | null;
           completed_at?: string | null;
@@ -266,16 +278,22 @@ export interface Database {
         Update: {
           id?: string;
           organization_id?: string;
-          name?: string;
-          subject?: string;
+          name?: string | null;
+          subject?: string | null;
           preview_text?: string | null;
-          from_name?: string;
-          from_email?: string;
+          from_name?: string | null;
+          from_email?: string | null;
           reply_to?: string | null;
           template_id?: string | null;
-          html_content?: string;
+          html_content?: string | null;
           design_json?: Json | null;
-          status?: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled';
+          status?:
+            | "draft"
+            | "scheduled"
+            | "sending"
+            | "sent"
+            | "paused"
+            | "cancelled";
           scheduled_at?: string | null;
           started_at?: string | null;
           completed_at?: string | null;
@@ -305,7 +323,16 @@ export interface Database {
           campaign_id: string;
           contact_id: string;
           sendgrid_message_id: string | null;
-          status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'dropped' | 'spam' | 'unsubscribed';
+          status:
+            | "pending"
+            | "sent"
+            | "delivered"
+            | "opened"
+            | "clicked"
+            | "bounced"
+            | "dropped"
+            | "spam"
+            | "unsubscribed";
           sent_at: string | null;
           delivered_at: string | null;
           first_opened_at: string | null;
@@ -325,7 +352,16 @@ export interface Database {
           campaign_id: string;
           contact_id: string;
           sendgrid_message_id?: string | null;
-          status?: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'dropped' | 'spam' | 'unsubscribed';
+          status?:
+            | "pending"
+            | "sent"
+            | "delivered"
+            | "opened"
+            | "clicked"
+            | "bounced"
+            | "dropped"
+            | "spam"
+            | "unsubscribed";
           sent_at?: string | null;
           delivered_at?: string | null;
           first_opened_at?: string | null;
@@ -345,7 +381,16 @@ export interface Database {
           campaign_id?: string;
           contact_id?: string;
           sendgrid_message_id?: string | null;
-          status?: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'dropped' | 'spam' | 'unsubscribed';
+          status?:
+            | "pending"
+            | "sent"
+            | "delivered"
+            | "opened"
+            | "clicked"
+            | "bounced"
+            | "dropped"
+            | "spam"
+            | "unsubscribed";
           sent_at?: string | null;
           delivered_at?: string | null;
           first_opened_at?: string | null;

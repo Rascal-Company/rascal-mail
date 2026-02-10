@@ -15,11 +15,27 @@ export const POST = withAuth(async ({ client, organizationId, request }) => {
     return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   }
 
+  const { data: recipients } = await client
+    .from("campaign_recipients")
+    .select("list_id")
+    .eq("campaign_id", campaignId);
+
+  const listIds = (recipients ?? []).map((r) => r.list_id);
+
+  let totalRecipients = 0;
+  if (listIds.length > 0) {
+    const { count } = await client
+      .from("contact_list_members")
+      .select("contact_id", { count: "exact", head: true })
+      .in("list_id", listIds);
+    totalRecipients = count ?? 0;
+  }
+
   await client
     .from("campaigns")
     .update({
       status: "sent",
-      total_recipients: 100,
+      total_recipients: totalRecipients,
       started_at: new Date().toISOString(),
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -27,18 +43,5 @@ export const POST = withAuth(async ({ client, organizationId, request }) => {
     .eq("id", campaignId)
     .eq("organization_id", organizationId);
 
-  const mockSends = [];
-  for (let i = 0; i < 10; i++) {
-    mockSends.push({
-      campaign_id: campaignId,
-      organization_id: organizationId,
-      contact_id: `contact-mock-${i}`,
-      status: "sent",
-      sent_at: new Date().toISOString(),
-    });
-  }
-
-  await client.from("email_sends").insert(mockSends);
-
-  return NextResponse.json({ success: true, recipientCount: 100 });
+  return NextResponse.json({ success: true, recipientCount: totalRecipients });
 });
