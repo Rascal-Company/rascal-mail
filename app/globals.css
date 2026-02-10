@@ -57,3 +57,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+:root {
+  --sidebar-width: 70px;
+}
+
+.sidebar-main-content {
+  margin-left: var(--sidebar-width, 70px);
+  transition: margin-left 300ms ease-in-out;
+}
+
+@media (max-width: 767px) {
+  .sidebar-main-content {
+    margin-left: 0;
+  }
+}

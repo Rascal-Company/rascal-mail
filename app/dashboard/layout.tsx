@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
+import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileNavigation } from "@/components/layout/MobileNavigation";
 
 export default function DashboardLayout({
   children,
@@ -11,10 +11,8 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-muted/30">
       <Sidebar />
-      <div className="pl-64 transition-all duration-300">
-        <Header />
-        <main className="p-6">{children}</main>
-      </div>
+      <MobileNavigation />
+      <main className="sidebar-main-content p-6">{children}</main>
     </div>
   );
 }
