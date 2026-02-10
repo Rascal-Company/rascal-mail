@@ -7,14 +7,11 @@ import {
   Menu,
   X,
   LayoutDashboard,
-  Inbox,
-  Send,
-  FileEdit,
-  ShieldAlert,
-  Trash2,
   Megaphone,
   FileText,
   Users,
+  List,
+  BarChart3,
   Settings,
   LogOut,
   ExternalLink,
@@ -25,14 +22,11 @@ import { createAuthClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/dashboard", label: "Etusivu", icon: LayoutDashboard },
-  { href: "/dashboard/inbox", label: "Saapuneet", icon: Inbox },
-  { href: "/dashboard/sent", label: "Lähetetyt", icon: Send },
-  { href: "/dashboard/drafts", label: "Luonnokset", icon: FileEdit },
-  { href: "/dashboard/spam", label: "Roskaposti", icon: ShieldAlert },
-  { href: "/dashboard/trash", label: "Roskakori", icon: Trash2 },
   { href: "/dashboard/campaigns", label: "Kampanjat", icon: Megaphone },
   { href: "/dashboard/templates", label: "Mallipohjat", icon: FileText },
-  { href: "/dashboard/lists", label: "Kontaktilistat", icon: Users },
+  { href: "/dashboard/contacts", label: "Kontaktit", icon: Users },
+  { href: "/dashboard/lists", label: "Kontaktilistat", icon: List },
+  { href: "/dashboard/analytics", label: "Analytiikka", icon: BarChart3 },
 ];
 
 export function MobileNavigation() {

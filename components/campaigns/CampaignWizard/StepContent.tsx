@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UnlayerEditor } from '@/components/templates/UnlayerEditor';
-import { useTemplates } from '@/hooks/useTemplates';
-import { FileText } from 'lucide-react';
-import { CampaignWizardData } from '@/types';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UnlayerEditor } from "@/components/templates/UnlayerEditor";
+import { useTemplates } from "@/hooks/useTemplates";
+import { CheckCircle, FileText, Pencil } from "lucide-react";
+import { CampaignWizardData } from "@/types";
 
 interface Props {
   data: Partial<CampaignWizardData>;
@@ -20,6 +20,7 @@ export function StepContent({ data, onUpdate }: Props) {
 
   const handleSave = (html: string, design: object) => {
     onUpdate({ htmlContent: html, designJson: design });
+    setShowEditor(false);
   };
 
   const handleSelectTemplate = (template: any) => {
@@ -38,6 +39,27 @@ export function StepContent({ data, onUpdate }: Props) {
         onSave={handleSave}
         onCancel={() => setShowEditor(false)}
       />
+    );
+  }
+
+  if (data.htmlContent) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+          <CheckCircle className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+          <p className="flex-1 font-medium text-green-800 dark:text-green-200">
+            Sisältö tallennettu
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowEditor(true)}
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Muokkaa
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -62,7 +84,9 @@ export function StepContent({ data, onUpdate }: Props) {
                   </div>
                   <p className="font-medium">{template.name}</p>
                   {template.subject && (
-                    <p className="text-sm text-muted-foreground">{template.subject}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {template.subject}
+                    </p>
                   )}
                 </Card>
               ))}
@@ -75,7 +99,9 @@ export function StepContent({ data, onUpdate }: Props) {
         </TabsContent>
         <TabsContent value="new" className="mt-4">
           <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">Aloita tyhjästä ja rakenna sähköpostisi editorilla</p>
+            <p className="text-muted-foreground mb-4">
+              Aloita tyhjästä ja rakenna sähköpostisi editorilla
+            </p>
             <Button onClick={() => setShowEditor(true)}>Avaa editori</Button>
           </div>
         </TabsContent>

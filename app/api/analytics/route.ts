@@ -7,12 +7,17 @@ export const GET = withAuth(async ({ client, organizationId, request }) => {
   const campaignId = searchParams.get("campaignId");
 
   if (type === "dashboard") {
+    const { count } = await client
+      .from("contacts")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", organizationId);
+
     return NextResponse.json({
       data: {
-        totalContacts: 127,
-        emailsSent30d: 1543,
-        openRate: 42.5,
-        clickRate: 18.2,
+        totalContacts: count ?? 0,
+        emailsSent30d: 0,
+        openRate: 0,
+        clickRate: 0,
       },
     });
   }

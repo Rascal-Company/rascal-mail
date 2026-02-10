@@ -5,14 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  Inbox,
-  Send,
-  FileEdit,
-  ShieldAlert,
-  Trash2,
   Megaphone,
   FileText,
   Users,
+  List,
+  BarChart3,
   Settings,
   LogOut,
   ExternalLink,
@@ -46,23 +43,26 @@ const standaloneItems: NavItemConfig[] = [
 
 const navSections: NavSectionConfig[] = [
   {
-    id: "email",
-    title: "Sähköposti",
-    items: [
-      { href: "/dashboard/inbox", label: "Saapuneet", icon: Inbox },
-      { href: "/dashboard/sent", label: "Lähetetyt", icon: Send },
-      { href: "/dashboard/drafts", label: "Luonnokset", icon: FileEdit },
-      { href: "/dashboard/spam", label: "Roskaposti", icon: ShieldAlert },
-      { href: "/dashboard/trash", label: "Roskakori", icon: Trash2 },
-    ],
-  },
-  {
     id: "campaigns",
-    title: "Kampanjat",
+    title: "Markkinointi",
     items: [
       { href: "/dashboard/campaigns", label: "Kampanjat", icon: Megaphone },
       { href: "/dashboard/templates", label: "Mallipohjat", icon: FileText },
-      { href: "/dashboard/lists", label: "Kontaktilistat", icon: Users },
+    ],
+  },
+  {
+    id: "contacts",
+    title: "Kontaktit",
+    items: [
+      { href: "/dashboard/contacts", label: "Kontaktit", icon: Users },
+      { href: "/dashboard/lists", label: "Kontaktilistat", icon: List },
+    ],
+  },
+  {
+    id: "reports",
+    title: "Raportit",
+    items: [
+      { href: "/dashboard/analytics", label: "Analytiikka", icon: BarChart3 },
     ],
   },
 ];
