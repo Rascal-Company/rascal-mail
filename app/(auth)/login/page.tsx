@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,12 +75,6 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Kirjaudutaan...' : 'Kirjaudu sisään'}
           </Button>
-          <p className="text-sm text-muted-foreground">
-            Ei tiliä?{' '}
-            <Link href="/signup" className="text-primary hover:underline">
-              Rekisteröidy
-            </Link>
-          </p>
         </CardFooter>
       </form>
     </Card>
